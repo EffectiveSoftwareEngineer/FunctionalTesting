@@ -5,4 +5,4 @@ The intent of this code is to demonstrate an automation of functional testing at
 For that purpose there **will be** at least two HTTP API services with accompanying tests.
 
 ## Disclaimer
-The code in this repository is for demonstration purposes only. Tt is not intended to represent any production-ready system. 
+The code in this repository is for demonstration purposes only. It is not intended to represent any production-ready system. 
