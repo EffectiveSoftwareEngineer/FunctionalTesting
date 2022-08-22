@@ -79,10 +79,10 @@ class UserManagementServiceGoodTest {
         // Given new user Record
         User user = with(defaultUser());
         // When creating a user
-        String actual = underTest.createUser(user).get();
-        // And a UUID is generated
-        assertThat(actual).isNotBlank();
-        assertThat(actual).containsPattern("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
+        UserId actual = underTest.createUser(user).get();
+        // Then a UUID is returned
+        assertThat(actual.Id()).isNotBlank();
+        assertThat(actual.Id()).containsPattern("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
         // And the user is stored
         Mockito.verify(userRepository).store(Mockito.eq(actual), Mockito.eq(user));
     }
@@ -90,10 +90,10 @@ class UserManagementServiceGoodTest {
     @Test
     void createUser_GeneratesUniqueID() {
         // When creating multiple users
-        int numberOfUsers = 100;
+        int numberOfUsers = 100;// arbitrary number that is big enough to develop confidence in randomness
         Set<String> ids = IntStream.range(0, numberOfUsers)
-                .mapToObj(ignore -> underTest.createUser(with(defaultUser())).get())
-                .collect(Collectors.toSet());
+                .mapToObj(ignore -> underTest.createUser(with(defaultUser())).get().Id())
+                .collect(Collectors.toSet());// Set allows only unique entries
         // Then the ids are unique
         assertThat(ids).as("This indicates that there was not unique IDs generated").hasSize(numberOfUsers);
     }
@@ -101,7 +101,7 @@ class UserManagementServiceGoodTest {
     public static Stream<Arguments> invalidUsersToCreate() {
         return Stream.of(
                 Arguments.of(null, new ValidationResult("User can't be null", "UCE0")),
-                Arguments.of(with(defaultUser().id("invalid")), new ValidationResult("User ID should be empty", "UCE1")),
+                Arguments.of(with(defaultUser().id(new UserId("invalid"))), new ValidationResult("User ID should be empty", "UCE1")),
                 Arguments.of(with(defaultUser().firstName(null)), new ValidationResult("User First Name is required", "UCE2")),
                 Arguments.of(with(defaultUser().firstName("")), new ValidationResult("User First Name is required", "UCE2")),
                 Arguments.of(with(defaultUser().lastName(null)), new ValidationResult("User Last Name is required", "UCE3")),
@@ -115,7 +115,7 @@ class UserManagementServiceGoodTest {
         // Given
         Mockito.when(userRepository.get(Mockito.any())).thenThrow(new RuntimeException("Shouldn't be called"));
         // When
-        Either<ValidationResult, String> actual = underTest.createUser(invalidUser);
+        Either<ValidationResult, UserId> actual = underTest.createUser(invalidUser);
         // Then there is a validation error
         assertThat(actual.isLeft()).as("Validation should have failed").isTrue();
         assertThat(actual.getLeft()).isEqualTo(expectedValidationResult);
