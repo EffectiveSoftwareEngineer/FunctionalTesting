@@ -1,7 +1,7 @@
 package org.effectiveengineer.functionaltesting.user;
 
 import io.vavr.control.Either;
-import org.effectiveengineer.functionaltesting.validation.ValidationResult;
+import org.effectiveengineer.functionaltesting.validation.ValidationError;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -19,8 +19,8 @@ public class UserManagementService {
      * @param user to store.
      * @return Either validation results, if any validation has failed or a new userId
      */
-    public Either<ValidationResult, UserId> createUser(final User user) {
-        Optional<ValidationResult> validationResult = validateUser(user);
+    public Either<ValidationError, UserId> createUser(final User user) {
+        Optional<ValidationError> validationResult = validateUser(user);
         if (validationResult.isPresent()) {
             return Either.left(validationResult.get());
         }
@@ -29,15 +29,15 @@ public class UserManagementService {
         return Either.right(userId);
     }
 
-    private Optional<ValidationResult> validateUser(User user) {
+    private Optional<ValidationError> validateUser(User user) {
         if (user == null)
-            return Optional.of(new ValidationResult("User can't be null", "UCE0"));
+            return Optional.of(new ValidationError("User can't be null", "UCE0"));
         if (user.getId() != null)
-            return Optional.of(new ValidationResult("User ID should be empty", "UCE1"));
+            return Optional.of(new ValidationError("User ID should be empty", "UCE1"));
         if (isBlank(user.getFirstName()))
-            return Optional.of(new ValidationResult("User First Name is required", "UCE2"));
+            return Optional.of(new ValidationError("User First Name is required", "UCE2"));
         if (isBlank(user.getLastName()))
-            return Optional.of(new ValidationResult("User Last Name is required", "UCE3"));
+            return Optional.of(new ValidationError("User Last Name is required", "UCE3"));
         return Optional.empty();
     }
 

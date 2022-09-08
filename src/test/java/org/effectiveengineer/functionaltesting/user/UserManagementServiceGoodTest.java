@@ -2,7 +2,7 @@ package org.effectiveengineer.functionaltesting.user;
 
 import io.vavr.control.Either;
 import org.effectiveengineer.functionaltesting.model.Address;
-import org.effectiveengineer.functionaltesting.validation.ValidationResult;
+import org.effectiveengineer.functionaltesting.validation.ValidationError;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -95,30 +95,31 @@ class UserManagementServiceGoodTest {
                 .mapToObj(ignore -> underTest.createUser(with(defaultUser())).get().Id())
                 .collect(Collectors.toSet());// Set allows only unique entries
         // Then the ids are unique
-        assertThat(ids).as("This indicates that there was not unique IDs generated").hasSize(numberOfUsers);
+        assertThat(ids).
+                as("This indicates that there was not unique IDs generated").hasSize(numberOfUsers);
     }
 
     public static Stream<Arguments> invalidUsersToCreate() {
         return Stream.of(
-                Arguments.of(null, new ValidationResult("User can't be null", "UCE0")),
-                Arguments.of(with(defaultUser().id(new UserId("invalid"))), new ValidationResult("User ID should be empty", "UCE1")),
-                Arguments.of(with(defaultUser().firstName(null)), new ValidationResult("User First Name is required", "UCE2")),
-                Arguments.of(with(defaultUser().firstName("")), new ValidationResult("User First Name is required", "UCE2")),
-                Arguments.of(with(defaultUser().lastName(null)), new ValidationResult("User Last Name is required", "UCE3")),
-                Arguments.of(with(defaultUser().lastName("")), new ValidationResult("User Last Name is required", "UCE3"))
+                Arguments.of(null, new ValidationError("User can't be null", "UCE0")),
+                Arguments.of(with(defaultUser().id(new UserId("invalid"))), new ValidationError("User ID should be empty", "UCE1")),
+                Arguments.of(with(defaultUser().firstName(null)), new ValidationError("User First Name is required", "UCE2")),
+                Arguments.of(with(defaultUser().firstName("")), new ValidationError("User First Name is required", "UCE2")),
+                Arguments.of(with(defaultUser().lastName(null)), new ValidationError("User Last Name is required", "UCE3")),
+                Arguments.of(with(defaultUser().lastName("")), new ValidationError("User Last Name is required", "UCE3"))
         );
     }
 
     @ParameterizedTest
     @MethodSource("invalidUsersToCreate")
-    void getUser_withInvalidId(User invalidUser, ValidationResult expectedValidationResult) {
+    void getUser_withInvalidId(User invalidUser, ValidationError expectedValidationError) {
         // Given
         Mockito.when(userRepository.get(Mockito.any())).thenThrow(new RuntimeException("Shouldn't be called"));
         // When
-        Either<ValidationResult, UserId> actual = underTest.createUser(invalidUser);
+        Either<ValidationError, UserId> actual = underTest.createUser(invalidUser);
         // Then there is a validation error
         assertThat(actual.isLeft()).as("Validation should have failed").isTrue();
-        assertThat(actual.getLeft()).isEqualTo(expectedValidationResult);
+        assertThat(actual.getLeft()).isEqualTo(expectedValidationError);
         // And repo was not called
         Mockito.verify(userRepository, Mockito.never()).get(Mockito.any());
     }
