@@ -19,6 +19,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.effectiveengineer.functionaltesting.assertion.EitherValidationErrorAssert.assertThat;
 
 class UserManagementServiceGoodTest {
     /**
@@ -101,25 +102,26 @@ class UserManagementServiceGoodTest {
 
     public static Stream<Arguments> invalidUsersToCreate() {
         return Stream.of(
-                Arguments.of(null, new ValidationError("User can't be null", "UCE0")),
-                Arguments.of(with(defaultUser().id(new UserId("invalid"))), new ValidationError("User ID should be empty", "UCE1")),
-                Arguments.of(with(defaultUser().firstName(null)), new ValidationError("User First Name is required", "UCE2")),
-                Arguments.of(with(defaultUser().firstName("")), new ValidationError("User First Name is required", "UCE2")),
-                Arguments.of(with(defaultUser().lastName(null)), new ValidationError("User Last Name is required", "UCE3")),
-                Arguments.of(with(defaultUser().lastName("")), new ValidationError("User Last Name is required", "UCE3"))
+                Arguments.of(null, "User can't be null", "UCE0"),
+                Arguments.of(with(defaultUser().id(new UserId("invalid"))), "User ID should be empty", "UCE1"),
+                Arguments.of(with(defaultUser().firstName(null)), "User First Name is required", "UCE2"),
+                Arguments.of(with(defaultUser().firstName("")), "User First Name is required", "UCE2"),
+                Arguments.of(with(defaultUser().lastName(null)), "User Last Name is required", "UCE3"),
+                Arguments.of(with(defaultUser().lastName("")), "User Last Name is required", "UCE3")
         );
     }
 
     @ParameterizedTest
     @MethodSource("invalidUsersToCreate")
-    void getUser_withInvalidId(User invalidUser, ValidationError expectedValidationError) {
+    void createUser_validation(User invalidUser, String expectedValidationMessage, String expectedValidationCode) {
         // Given
         Mockito.when(userRepository.get(Mockito.any())).thenThrow(new RuntimeException("Shouldn't be called"));
         // When
         Either<ValidationError, UserId> actual = underTest.createUser(invalidUser);
         // Then there is a validation error
-        assertThat(actual.isLeft()).as("Validation should have failed").isTrue();
-        assertThat(actual.getLeft()).isEqualTo(expectedValidationError);
+        assertThat(actual).validationFailed()
+                .validationMessageIs(expectedValidationMessage)
+                .validationCodeIs(expectedValidationCode);
         // And repo was not called
         Mockito.verify(userRepository, Mockito.never()).get(Mockito.any());
     }
